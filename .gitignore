@@ -1,0 +1,4 @@
+secret.txt
+*.cache*
+.vscode
+.venv

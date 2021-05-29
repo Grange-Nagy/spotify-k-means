@@ -15,20 +15,21 @@ def dominantColors(url,clusters=3):
     img = imutils.url_to_image(url)
     cv2.imshow('Currently Playing', img)
     
-    #convert to rgb from bgr
-    img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+    #convert to lab from bgr
+    img = cv2.cvtColor(img, cv2.COLOR_BGR2LAB)
             
     #reshaping to a list of pixels
     img = img.reshape((img.shape[0] * img.shape[1], 3))
     
     
     #using k-means to cluster pixels
-    kmeans = KMeans(n_clusters = clusters)
+    kmeans = KMeans(n_clusters=clusters)
     kmeans.fit(img)
     
-    #the cluster centers are our dominant colors.
     colors = kmeans.cluster_centers_
-    
+    colors = cv2.cvtColor(np.uint8([colors]), cv2.COLOR_LAB2RGB)
+    colors = colors[0]
+
     #returning after converting to integer from float
     return colors.astype(int)
 

@@ -4,16 +4,17 @@ from sklearn.cluster import KMeans
 import numpy as np
 from skimage import io
 import spotipy
+from spotipy import oauth2
 import spotipy.util as util
 import imutils
 import os
 
-
-def dominantColors(url,clusters=3):
+#use k-means in lab colorspace to determine dominant colors
+def dominantColors(url,clusters):
 
     #read image
     img = imutils.url_to_image(url)
-    cv2.imshow('Currently Playing', img)
+    #cv2.imshow('Currently Playing', img)
     
     #convert to lab from bgr
     img = cv2.cvtColor(img, cv2.COLOR_BGR2LAB)
@@ -27,10 +28,10 @@ def dominantColors(url,clusters=3):
     kmeans.fit(img)
     
     colors = kmeans.cluster_centers_
-    colors = cv2.cvtColor(np.uint8([colors]), cv2.COLOR_LAB2RGB)
-    colors = colors[0]
 
-    #returning after converting to integer from float
+    #convert to 3d for conversion then back to 2d
+    colors = cv2.cvtColor(np.uint8([colors]), cv2.COLOR_LAB2RGB)[0]
+
     return colors.astype(int)
 
 
@@ -40,17 +41,25 @@ os.environ['SPOTIPY_CLIENT_ID'] = secretFile.readline().strip()
 os.environ['SPOTIPY_CLIENT_SECRET'] = secretFile.readline().strip()
 os.environ['SPOTIPY_REDIRECT_URI'] = secretFile.readline().strip()
 
-token = util.prompt_for_user_token(secretFile.readline().strip(), 'user-read-currently-playing')
+userID = secretFile.readline().strip()
 secretFile.close()
+
+
+spotify = spotipy.Spotify(auth_manager=spotipy.SpotifyOAuth(scope='user-read-currently-playing',cache_path='.cache-'+userID))
+
 
 lastURL = ""
 
 while(True):
-    
 
-    track = spotipy.Spotify(token).current_user_playing_track()
-    imageURL = track['item']['album']['images'][0]['url']
+    #token should refresh automatically
+    track = spotify.current_user_playing_track()
 
+    #check if track is None
+    if(track != None):
+        imageURL = track['item']['album']['images'][0]['url']
+
+    #if the song has changed
     if(lastURL != imageURL):
         lastURL = imageURL
         colors = dominantColors(imageURL,4)
@@ -58,8 +67,8 @@ while(True):
         palette = np.array(colors, dtype=np.uint8)
         display = np.array([[0,1],[2,3]], dtype=np.uint8)
 
-        io.imshow(palette[display])
-        io.show()
+        print(colors)
+        #io.imshow(palette[display])
+        #io.show()
 
-        
     sleep(1)
